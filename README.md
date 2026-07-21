@@ -64,7 +64,7 @@ Se desejar executar o código em sua máquina local para testes ou desenvolvimen
 
 1. **Clone o repositório:**
    ```bash
-   git clone https://github.com/SEU-USUARIO/NOME-DO-REPOSITORIO.git
+   git clone https://github.com/gabrielrodriguez-data/numerando-jogo-discalculia.git
    ```
 2. **Abra o projeto:**
    Navegue até a pasta do projeto clonado.

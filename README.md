@@ -20,11 +20,12 @@ O software fundamenta-se nos princípios do **Design Universal para a Aprendizag
 
 ---
 
+
 ## 🚀 Demonstração e Acesso Online
 
 Você pode acessar e testar o jogo diretamente pelo navegador através do **GitHub Pages**, sem a necessidade de instalação prévia:
 
-👉 **[Acessar o Jogo Online (GitHub Pages)](https://gabrielrodriguez-data.github.io/numerando-jogo-discalculia/)** *(Substitua com o seu link)*
+👉 **[Acessar o Jogo Online (GitHub Pages)](https://gabrielrodriguez-data.github.io/numerando-jogo-discalculia/)**
 
 ---
 

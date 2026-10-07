@@ -1,381 +1,399 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Numerando - A Lenda dos Números Perdidos</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
-:root{
-    --bg:#0a0a1a;
-    --card:#151528;
-    --card2:#1a1a3e;
-    --accent:#e94560;
-    --gold:#ffd700;
-    --green:#4ade80;
-    --blue:#3b82f6;
-    --purple:#a855f7;
-    --pink:#ec4899;
-    --orange:#f97316;
-    --teal:#14b8a6;
-    --text:#f0f0ff;
-    --shadow:0 8px 40px rgba(0,0,0,0.6);
-    --warrior:#60a5fa;
-    --fairy:#f472b6;
-    --mage:#a78bfa;
-    --orc:#34d399;
+package br.com.senac.pressao;
+
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.io.IOException;
+import java.util.List;
+import javax.swing.AbstractAction;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
+import javax.swing.JRootPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.KeyStroke;
+import javax.swing.ListSelectionModel;
+import javax.swing.JPanel;
+import javax.swing.table.DefaultTableModel;
+
+public class TelaMedicoes extends JFrame {
+    private static final Font FONTE_GRANDE = new Font("SansSerif", Font.PLAIN, 18);
+    private static final Font FONTE_TITULO = new Font("SansSerif", Font.BOLD, 24);
+    private static final Font FONTE_CABECALHO = new Font("SansSerif", Font.BOLD, 16);
+
+    private final ArquivoMedicoes arquivo = new ArquivoMedicoes();
+
+    private final JTextField txtData = new JTextField(14);
+    private final JTextField txtHora = new JTextField(10);
+    private final JTextField txtSistolica = new JTextField(10);
+    private final JTextField txtDiastolica = new JTextField(10);
+    private final JCheckBox chkEstresse = new JCheckBox("Estou em situação de estresse");
+    private final JButton btnSalvar = new JButton("Salvar");
+    private final JButton btnLimpar = new JButton("Limpar");
+    private final JButton btnFechar = new JButton("Fechar");
+
+    private final DefaultTableModel modelo = new DefaultTableModel(
+            new Object[] {"Data", "Hora", "Pressão Sistólica", "Pressão Diastólica", "Estresse"}, 0) {
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
+    };
+
+    private final JTable tabela = new JTable(modelo);
+
+    // Rótulos atualizados com a unidade de medida (mmHg)
+    private final JLabel[] labelsDaTela = new JLabel[] {
+        new JLabel("Data:"),
+        new JLabel("Hora:"),
+        new JLabel("Pressão sistólica (mmHg):"),
+        new JLabel("Pressão diastólica (mmHg):")
+    };
+
+    public TelaMedicoes() {
+        setTitle("Registro de Medições de Pressão");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(900, 650);
+        setMinimumSize(new Dimension(780, 580));
+        setLocationRelativeTo(null);
+
+        construirInterface();
+        configurarAcessibilidade();
+        configurarAtalhos();
+        carregarArquivo();
+        preencherDataHoraAtual();
+    }
+
+    private void construirInterface() {
+        JPanel principal = new JPanel(new BorderLayout(15, 15));
+        principal.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        JLabel titulo = new JLabel("Registro de Medições de Pressão");
+        titulo.setFont(FONTE_TITULO);
+        titulo.setToolTipText("Tela para registrar e consultar medições de pressão arterial.");
+        principal.add(titulo, BorderLayout.NORTH);
+
+        JPanel formulario = new JPanel(new GridBagLayout());
+        formulario.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createEtchedBorder(),
+                "Nova medição"
+        ));
+
+        JLabel lblData = labelsDaTela[0];
+        JLabel lblHora = labelsDaTela[1];
+        JLabel lblSistolica = labelsDaTela[2];
+        JLabel lblDiastolica = labelsDaTela[3];
+
+        lblData.setLabelFor(txtData);
+        lblHora.setLabelFor(txtHora);
+        lblSistolica.setLabelFor(txtSistolica);
+        lblDiastolica.setLabelFor(txtDiastolica);
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(8, 10, 8, 10);
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        adicionarCampo(formulario, gbc, 0, lblData, txtData);
+        adicionarCampo(formulario, gbc, 1, lblHora, txtHora);
+        adicionarCampo(formulario, gbc, 2, lblSistolica, txtSistolica);
+        adicionarCampo(formulario, gbc, 3, lblDiastolica, txtDiastolica);
+
+        gbc.gridx = 1;
+        gbc.gridy = 4;
+        gbc.gridwidth = 2;
+        formulario.add(chkEstresse, gbc);
+
+        JPanel botoes = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        botoes.add(btnSalvar);
+        botoes.add(btnLimpar);
+        botoes.add(btnFechar);
+
+        gbc.gridy = 5;
+        formulario.add(botoes, gbc);
+
+        JPanel topo = new JPanel(new BorderLayout());
+        topo.add(formulario, BorderLayout.CENTER);
+        principal.add(topo, BorderLayout.CENTER);
+
+        tabela.setFont(FONTE_GRANDE);
+        tabela.setRowHeight(34);
+        tabela.getTableHeader().setFont(FONTE_CABECALHO);
+        tabela.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        tabela.setFillsViewportHeight(true);
+
+        JScrollPane scroll = new JScrollPane(tabela);
+        scroll.setBorder(BorderFactory.createTitledBorder("Histórico de medições"));
+        principal.add(scroll, BorderLayout.SOUTH);
+
+        scroll.setPreferredSize(new Dimension(850, 280));
+
+        btnSalvar.addActionListener(e -> salvar());
+        btnLimpar.addActionListener(e -> limpar());
+        btnFechar.addActionListener(e -> dispose());
+
+        getRootPane().setDefaultButton(btnSalvar);
+        add(principal);
+    }
+
+    private void adicionarCampo(JPanel painel, GridBagConstraints gbc, int linha,
+                                JLabel label, JTextField campo) {
+        gbc.gridx = 0;
+        gbc.gridy = linha;
+        gbc.gridwidth = 1;
+        gbc.weightx = 0;
+        painel.add(label, gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 1;
+        campo.setPreferredSize(new Dimension(260, 38));
+        painel.add(campo, gbc);
+    }
+
+    private void configurarAcessibilidade() {
+        for (JLabel label : labelsDaTela) {
+            label.setFont(FONTE_GRANDE);
+        }
+
+        txtData.setFont(FONTE_GRANDE);
+        txtHora.setFont(FONTE_GRANDE);
+        txtSistolica.setFont(FONTE_GRANDE);
+        txtDiastolica.setFont(FONTE_GRANDE);
+        chkEstresse.setFont(FONTE_GRANDE);
+
+        // Destaque visual no botão Salvar (Ação Principal)
+        btnSalvar.setFont(new Font("SansSerif", Font.BOLD, 20));
+        btnSalvar.setBackground(new java.awt.Color(220, 245, 220)); 
+        btnSalvar.setForeground(new java.awt.Color(0, 100, 0));       
+        
+        btnLimpar.setFont(FONTE_GRANDE);
+        btnFechar.setFont(FONTE_GRANDE);
+
+        txtData.setToolTipText("Digite a data da medição no formato dd/MM/aaaa.");
+        txtHora.setToolTipText("Digite o horário no formato HH:mm.");
+        txtSistolica.setToolTipText("Digite somente números inteiros para a pressão sistólica em mmHg.");
+        txtDiastolica.setToolTipText("Digite somente números inteiros para a pressão diastólica em mmHg.");
+        chkEstresse.setToolTipText("Marque se você estava em uma situação de estresse no momento da medição.");
+        btnSalvar.setToolTipText("Salva a medição no arquivo CSV. Atalho: Alt+S.");
+        btnLimpar.setToolTipText("Limpa os campos da nova medição. Atalho: Alt+L.");
+        btnFechar.setToolTipText("Fecha o sistema. Atalho: Alt+F.");
+
+        btnSalvar.setMnemonic(KeyEvent.VK_S);
+        btnLimpar.setMnemonic(KeyEvent.VK_L);
+        btnFechar.setMnemonic(KeyEvent.VK_F);
+
+        chkEstresse.setMnemonic(KeyEvent.VK_E);
+    }
+
+    private void configurarAtalhos() {
+        JRootPane raiz = getRootPane();
+
+        raiz.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "fechar");
+
+        raiz.getActionMap().put("fechar", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                dispose();
+            }
+        });
+
+        raiz.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK), "salvarCtrl");
+
+        raiz.getActionMap().put("salvarCtrl", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                salvar();
+            }
+        });
+
+        setFocusTraversalPolicy(new OrdemFocoPolicy(
+                txtData, txtHora, txtSistolica, txtDiastolica,
+                chkEstresse, btnSalvar, btnLimpar, btnFechar
+        ));
+        setFocusTraversalPolicyProvider(true);
+    }
+
+    private void preencherDataHoraAtual() {
+        java.time.LocalDate hoje = java.time.LocalDate.now();
+        java.time.LocalTime agora = java.time.LocalTime.now();
+
+        txtData.setText(hoje.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        txtHora.setText(agora.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")));
+    }
+
+    private void carregarArquivo() {
+        try {
+            List<Medicao> medicoes = arquivo.carregar();
+            modelo.setRowCount(0);
+
+            for (Medicao medicao : medicoes) {
+                adicionarNaTabela(medicao);
+            }
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Não foi possível ler o arquivo de medições.\n" +
+                    "O programa continuará funcionando e poderá criar um novo arquivo.\n\n" +
+                    "Detalhes: " + ex.getMessage(),
+                    "Aviso",
+                    JOptionPane.WARNING_MESSAGE
+            );
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Ocorreu um problema ao carregar o histórico.\n" +
+                    "Você ainda pode realizar novas medições.",
+                    "Aviso",
+                    JOptionPane.WARNING_MESSAGE
+            );
+        }
+    }
+
+    private void salvar() {
+        try {
+            String data = Validador.validarData(txtData.getText());
+            String hora = Validador.validarHora(txtHora.getText());
+            int sistolica = Validador.validarPressao(
+                    txtSistolica.getText(), "sistólica"
+            );
+            int diastolica = Validador.validarPressao(
+                    txtDiastolica.getText(), "diastólica"
+            );
+
+            Medicao medicao = new Medicao(
+                    data,
+                    hora,
+                    sistolica,
+                    diastolica,
+                    chkEstresse.isSelected()
+            );
+
+            arquivo.adicionar(medicao);
+            adicionarNaTabela(medicao);
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Medição salva com sucesso!\n" +
+                    "O registro foi gravado no arquivo medicoes.csv.",
+                    "Sucesso",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+
+            limparCamposMantendoDataHora();
+
+        } catch (ValidacaoException ex) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    ex.getMessage(),
+                    "Dados inválidos",
+                    JOptionPane.WARNING_MESSAGE
+            );
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Não foi possível salvar a medição no arquivo.\n\n" +
+                    "Verifique se a pasta permite gravação.\n" +
+                    "Detalhes: " + ex.getMessage(),
+                    "Erro ao salvar",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Ocorreu um erro inesperado ao salvar a medição.\n" +
+                    "Nenhuma ação adicional foi realizada.",
+                    "Erro",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
+
+    private void adicionarNaTabela(Medicao medicao) {
+        modelo.addRow(new Object[] {
+                medicao.getData(),
+                medicao.getHora(),
+                medicao.getSistolica(),
+                medicao.getDiastolica(),
+                medicao.isEstresse() ? "Sim" : "Não"
+        });
+
+        if (modelo.getRowCount() > 0) {
+            tabela.scrollRectToVisible(
+                    tabela.getCellRect(modelo.getRowCount() - 1, 0, true)
+            );
+        }
+    }
+
+    private void limpar() {
+        txtData.setText("");
+        txtHora.setText("");
+        txtSistolica.setText("");
+        txtDiastolica.setText("");
+        chkEstresse.setSelected(false);
+        txtData.requestFocusInWindow();
+    }
+
+    private void limparCamposMantendoDataHora() {
+        txtSistolica.setText("");
+        txtDiastolica.setText("");
+        chkEstresse.setSelected(false);
+        txtSistolica.requestFocusInWindow();
+    }
+
+    private static class OrdemFocoPolicy extends java.awt.FocusTraversalPolicy {
+        private final List<Component> componentes;
+
+        OrdemFocoPolicy(Component... componentes) {
+            this.componentes = List.of(componentes);
+        }
+
+        @Override
+        public Component getComponentAfter(Container aContainer, Component aComponent) {
+            int indice = componentes.indexOf(aComponent);
+            if (indice < 0) {
+                return componentes.get(0);
+            }
+            return componentes.get((indice + 1) % componentes.size());
+        }
+
+        @Override
+        public Component getComponentBefore(Container aContainer, Component aComponent) {
+            int indice = componentes.indexOf(aComponent);
+            if (indice < 0) {
+                return componentes.get(0);
+            }
+            return componentes.get((indice - 1 + componentes.size()) % componentes.size());
+        }
+
+        @Override
+        public Component getFirstComponent(Container aContainer) {
+            return componentes.get(0);
+        }
+
+        @Override
+        public Component getLastComponent(Container aContainer) {
+            return componentes.get(componentes.size() - 1);
+        }
+
+        @Override
+        public Component getDefaultComponent(Container aContainer) {
+            return componentes.get(0);
+        }
+    }
 }
-html,body{height:100%;overflow-x:hidden}
-body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-.screen{display:none;min-height:100vh;padding:16px;animation:fadeIn 0.4s ease;width:100%}
-.screen.active{display:flex;flex-direction:column}
-@keyframes fadeIn{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
-@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-18px)}}
-@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
-@keyframes pop{0%{transform:scale(0)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
-@keyframes slash{0%{transform:translateX(0) rotate(0deg)}30%{transform:translateX(80px) rotate(-20deg)}60%{transform:translateX(160px) rotate(10deg)}100%{transform:translateX(0) rotate(0deg)}}
-@keyframes bossHit{0%,100%{transform:translateX(0)}25%{transform:translateX(-20px) scale(0.9)}50%{transform:translateX(10px) scale(1.1)}75%{transform:translateX(-10px) scale(0.95)}}
-@keyframes bossDeath{0%{transform:scale(1);opacity:1}50%{transform:scale(1.3) rotate(15deg);opacity:0.7}100%{transform:scale(0) rotate(45deg);opacity:0}}
-@keyframes confettiFall{0%{transform:translateY(-120vh) rotate(0deg)}100%{transform:translateY(120vh) rotate(720deg)}}
-
-/* ========== HEADER ========== */
-.header{text-align:center;padding:14px 10px 10px;background:linear-gradient(135deg,#151528,#0f1a3e);border-radius:0 0 20px 20px;margin:-16px -16px 10px;box-shadow:var(--shadow);flex-shrink:0}
-.header h1{font-family:'Fredoka One',cursive;font-size:1.6rem;background:linear-gradient(135deg,var(--gold),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.header p{color:#94a3b8;font-size:0.8rem}
-.header .badge{display:inline-block;background:rgba(233,69,96,0.25);color:var(--accent);padding:2px 14px;border-radius:12px;font-size:0.65rem;font-weight:700;margin-top:3px}
-
-/* ========== BUTTONS ========== */
-.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 30px;border:none;border-radius:50px;font-family:'Nunito',sans-serif;font-weight:700;font-size:0.95rem;cursor:pointer;transition:all 0.3s;text-decoration:none}
-.btn-primary{background:linear-gradient(135deg,var(--accent),var(--orange));color:#fff}
-.btn-secondary{background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff}
-.btn-success{background:linear-gradient(135deg,var(--green),var(--teal));color:#fff}
-.btn-gold{background:linear-gradient(135deg,var(--gold),var(--orange));color:#1a1a2e}
-.btn-sm{padding:8px 16px;font-size:0.8rem}
-.btn-outline{background:transparent;border:2px solid var(--gold);color:var(--gold)}
-.btn:hover{transform:translateY(-3px);box-shadow:0 8px 25px rgba(0,0,0,0.4)}
-.btn:active{transform:scale(0.96)}
-
-/* ========== INPUT ========== */
-.input-field{background:var(--card2);border:2px solid rgba(255,255,255,0.12);border-radius:12px;padding:12px 16px;width:100%;color:var(--text);font-size:1rem;font-family:'Nunito',sans-serif;outline:none;transition:border-color 0.3s}
-.input-field:focus{border-color:var(--gold)}
-
-/* ========== SCREEN: MENU ========== */
-.menu-content{flex:1;display:flex;flex-direction:column;justify-content:center;max-width:700px;margin:0 auto;width:100%;padding:10px 0}
-.name-section{margin-bottom:12px;text-align:center}
-.name-section label{color:#94a3b8;font-size:0.85rem;font-weight:600}
-.char-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:12px 0}
-@media(min-width:500px){.char-grid{grid-template-columns:repeat(4,1fr)}}
-.char-card{background:var(--card);border-radius:16px;padding:16px 8px 12px;text-align:center;cursor:pointer;transition:all 0.3s;border:3px solid transparent;position:relative}
-.char-card:hover{transform:translateY(-5px);box-shadow:0 10px 30px rgba(0,0,0,0.4)}
-.char-card.selected{border-color:var(--gold);box-shadow:0 0 25px rgba(255,215,0,0.2)}
-.char-card.selected .check-badge{display:flex}
-.check-badge{display:none;position:absolute;top:-8px;right:-8px;width:26px;height:26px;background:var(--gold);border-radius:50%;color:#000;font-size:0.75rem;align-items:center;justify-content:center;font-weight:900}
-
-/* CSS Characters */
-.css-char{width:80px;height:110px;margin:0 auto 6px;position:relative;display:inline-block}
-@media(min-width:400px){.css-char{width:90px;height:120px}}
-.css-char .ch-head{width:50px;height:50px;border-radius:50%;position:absolute;top:0;left:50%;transform:translateX(-50%);z-index:2;background:#fcd34d}
-.css-char .ch-eye-l,.css-char .ch-eye-r{width:8px;height:10px;border-radius:50%;position:absolute;top:18px;z-index:3;background:#1e293b}
-.css-char .ch-eye-l{left:22px}.css-char .ch-eye-r{left:50px}
-.css-char .ch-mouth{width:16px;height:7px;position:absolute;top:36px;left:32px;z-index:3;transition:all 0.3s}
-.css-char .ch-mouth.happy{border:2px solid #333;border-top:none;height:9px;border-radius:0 0 15px 15px;background:transparent}
-.css-char .ch-body{width:55px;height:48px;position:absolute;top:46px;left:50%;transform:translateX(-50%);border-radius:8px 8px 12px 12px;z-index:1}
-.css-char .ch-leg-l,.css-char .ch-leg-r{width:16px;height:20px;position:absolute;top:86px;border-radius:0 0 8px 8px;z-index:0}
-
-/* Warrior */
-.css-char.warrior .ch-helmet{width:60px;height:22px;background:linear-gradient(#94a3b8,#64748b);position:absolute;top:-3px;left:-5px;z-index:4;border-radius:30px 30px 0 0;clip-path:polygon(10% 0%,90% 0%,100% 100%,0% 100%)}
-.css-char.warrior .ch-crest{width:8px;height:14px;background:var(--accent);position:absolute;top:-12px;left:36px;z-index:5;border-radius:4px 4px 0 0}
-.css-char.warrior .ch-body{background:linear-gradient(135deg,#60a5fa,#3b82f6)}
-.css-char.warrior .ch-leg-l,.css-char.warrior .ch-leg-r{background:#475569}
-.css-char.warrior .ch-shield{width:22px;height:26px;background:var(--accent);position:absolute;top:50px;left:-8px;z-index:2;border-radius:50%;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:0.7rem;color:#fff}
-
-/* Fairy */
-.css-char.fairy .ch-body{background:linear-gradient(135deg,#f472b6,#ec4899)}
-.css-char.fairy .ch-leg-l,.css-char.fairy .ch-leg-r{background:#db2777}
-.css-char.fairy .ch-wing-l,.css-char.fairy .ch-wing-r{width:26px;height:20px;background:rgba(244,114,182,0.35);position:absolute;top:40px;z-index:0;border-radius:50% 50% 50% 0;border:1px solid rgba(244,114,182,0.25)}
-.css-char.fairy .ch-wing-l{left:-12px;transform:rotate(-20deg)}.css-char.fairy .ch-wing-r{right:-12px;left:auto;transform:rotate(20deg);border-radius:50% 50% 0 50%}
-
-/* Mage */
-.css-char.mage .ch-hat{width:50px;height:32px;background:linear-gradient(135deg,#7c3aed,#6d28d9);position:absolute;top:-8px;left:15px;z-index:4;clip-path:polygon(50% 0%,0% 100%,100% 100%);border-radius:3px 3px 0 0}
-.css-char.mage .ch-body{background:linear-gradient(135deg,#a78bfa,#7c3aed)}
-.css-char.mage .ch-leg-l,.css-char.mage .ch-leg-r{background:#5b21b6}
-
-/* Orc */
-.css-char.orc .ch-head{background:#86efac}
-.css-char.orc .ch-body{background:linear-gradient(135deg,#34d399,#10b981)}
-.css-char.orc .ch-leg-l,.css-char.orc .ch-leg-r{background:#059669}
-
-.char-name{font-size:0.95rem;font-weight:800;margin-top:4px}
-.char-sub{font-size:0.7rem;color:#94a3b8}
-
-.menu-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:14px 0}
-.menu-footer{text-align:center;padding:8px;color:#94a3b8;font-size:0.7rem;flex-shrink:0}
-
-/* ========== SCREEN: GAME ========== */
-.game-wrap{flex:1;display:flex;flex-direction:column;max-width:750px;margin:0 auto;width:100%}
-.game-hud{display:flex;align-items:center;gap:8px;background:var(--card);border-radius:14px;padding:10px 14px;margin-bottom:10px;flex-wrap:wrap;flex-shrink:0}
-.hud-item{display:flex;align-items:center;gap:4px;font-size:0.75rem;font-weight:600}
-.hud-item .hud-val{font-size:0.9rem}
-.hud-val.gold{color:var(--gold)}.hud-val.green{color:var(--green)}
-.hud-label{color:#94a3b8;font-size:0.65rem}
-.hud-progress{flex:1;min-width:60px;height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden}
-.hud-progress-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--teal));border-radius:3px;transition:width 0.5s}
-.hud-voice-btn{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:var(--text);padding:4px 10px;border-radius:20px;cursor:pointer;font-size:0.7rem;transition:all 0.3s;font-family:'Nunito',sans-serif}
-.hud-voice-btn:hover{background:rgba(255,255,255,0.15)}
-
-.story-bar{background:var(--card2);border-radius:12px;padding:8px 14px;margin-bottom:8px;text-align:center;flex-shrink:0;border-left:4px solid var(--gold)}
-.story-bar .story-text{font-size:0.85rem;color:#cbd5e1;font-style:italic}
-
-.game-char-area{display:flex;align-items:center;gap:12px;background:var(--card2);border-radius:14px;padding:10px 14px;min-height:100px;margin-bottom:10px;flex-shrink:0}
-.game-char-area .css-char{transform:scale(0.85);transform-origin:center;margin:0}
-.game-char-area .speech-box{flex:1;background:rgba(255,255,255,0.04);border-radius:10px;padding:8px 12px;border-left:3px solid var(--gold)}
-.speech-box .speaker{font-size:0.7rem;font-weight:700;color:var(--gold);margin-bottom:2px}
-.speech-box .text{font-size:0.85rem;line-height:1.4}
-.text.correct{color:var(--green)}.text.wrong{color:var(--accent)}
-
-.quantity-area{background:var(--card);border-radius:14px;padding:14px;margin-bottom:8px;text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center}
-.q-title{font-size:1.15rem;font-weight:800;margin-bottom:10px;color:var(--gold)}
-.object-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-bottom:8px;min-height:70px}
-.object-item{font-size:3rem;animation:pop 0.3s ease;transition:transform 0.2s}
-
-.ans-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0}
-.ans-btn{background:var(--card2);border:3px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px 8px;font-family:'Fredoka One',cursive;font-size:2rem;color:var(--text);cursor:pointer;transition:all 0.2s}
-.ans-btn:hover{background:rgba(255,255,255,0.1);border-color:var(--gold);transform:translateY(-3px)}
-.ans-btn.correct{background:var(--green)!important;border-color:var(--green)!important}
-.ans-btn.wrong{background:var(--accent)!important;border-color:var(--accent)!important;animation:shake 0.4s}
-
-.level-badge{text-align:center;margin-bottom:6px;flex-shrink:0}
-.level-badge .lvl{display:inline-block;padding:4px 18px;border-radius:20px;font-size:0.75rem;font-weight:700}
-.lvl-1{background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff}
-.lvl-2{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff}
-.lvl-3{background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff}
-.lvl-4{background:linear-gradient(135deg,#f97316,#ea580c);color:#fff}
-.game-footer{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:6px;flex-shrink:0}
-
-/* ========== BATTLE SCREEN ========== */
-.battle-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;max-width:700px;margin:0 auto;width:100%}
-.battle-stage{width:100%;height:300px;position:relative;background:linear-gradient(180deg,#0a0a2e 0%,#1a0a2e 40%,#2a1a0e 100%);border-radius:20px;overflow:hidden;margin:15px 0;border:2px solid rgba(255,255,255,0.08)}
-.battle-ground{position:absolute;bottom:0;width:100%;height:40%;background:linear-gradient(180deg,transparent,#1a1a0a)}
-.battle-hero{position:absolute;bottom:50px;left:15%;font-size:4rem;z-index:5;animation:float 2s ease-in-out infinite}
-.battle-boss{position:absolute;bottom:50px;right:15%;font-size:5rem;z-index:5}
-.battle-dialog{background:var(--card2);border-radius:14px;padding:14px 20px;margin:10px 0;border-left:4px solid var(--gold);max-width:500px;width:100%}
-.battle-dialog .bd-title{font-weight:800;color:var(--gold);font-size:0.95rem}
-.battle-dialog .bd-text{color:#cbd5e1;font-size:0.85rem;margin-top:4px}
-.battle-btn{font-size:1.1rem;padding:16px 40px}
-
-/* ========== PRIZE SCREEN ========== */
-.prize-container{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;max-width:500px;margin:0 auto;width:100%}
-.prize-trophy{font-size:5rem;animation:bounce 1s ease-in-out infinite}
-.prize-title{font-family:'Fredoka One',cursive;font-size:1.8rem;color:var(--gold);margin:8px 0}
-.prize-sub{color:var(--teal);font-weight:700;font-size:0.9rem}
-.prize-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:10px 0;width:100%}
-.prize-stat{background:var(--card);border-radius:10px;padding:10px}
-.prize-stat .val{font-size:1.3rem;font-weight:800}
-.prize-stat .lbl{font-size:0.65rem;color:#94a3b8}
-.prize-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:10px 0}
-
-/* ========== DASHBOARD ========== */
-.dash-wrap{flex:1;display:flex;flex-direction:column;max-width:800px;margin:0 auto;width:100%}
-.dash-tabs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;flex-shrink:0}
-.dash-tab{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text);padding:8px 18px;border-radius:10px;cursor:pointer;font-weight:700;font-size:0.8rem}
-.dash-tab.active{background:var(--accent);border-color:var(--accent)}
-.dash-panel{display:none;flex:1;overflow-y:auto}
-.dash-panel.active{display:block}
-.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
-.stat-card{background:var(--card);border-radius:12px;padding:12px 8px;text-align:center}
-.stat-card .s-value{font-size:1.2rem;font-weight:800}
-.stat-card .s-label{font-size:0.6rem;color:#94a3b8;font-weight:600}
-.canvas-box{background:var(--card);border-radius:14px;padding:12px;margin-bottom:12px}
-.canvas-box h3{font-size:0.85rem;color:var(--gold);margin-bottom:6px}
-.canvas-box canvas{width:100%!important;max-height:180px;background:rgba(0,0,0,0.3);border-radius:8px}
-.table-box{overflow-x:auto;margin:10px 0;background:var(--card);border-radius:12px;padding:10px}
-.dash-table{width:100%;border-collapse:collapse;font-size:0.78rem}
-.dash-table th{text-align:left;padding:6px 8px;color:#94a3b8;font-size:0.65rem;border-bottom:1px solid rgba(255,255,255,0.08)}
-.dash-table td{padding:5px 8px;border-bottom:1px solid rgba(255,255,255,0.04)}
-.insights-box{background:var(--card);border-radius:12px;padding:14px;margin:10px 0}
-.insights-box h3{font-size:0.85rem;color:var(--gold);margin-bottom:8px}
-.dash-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
-</style>
-</head>
-<body>
-
-<!-- ======================== MENU ======================== -->
-<div id="screen-menu" class="screen active">
-    <div class="header">
-        <h1>⚔️ Numerando: A Lenda dos Números Perdidos</h1>
-        <p>Um RPG de aventura matemática para aprender os números!</p>
-        <div class="badge">🐉 Derrote o Dragão · 🐍 A Serpente · 🧙 O Bruxo · 👸 Salve a Princesa!</div>
-    </div>
-    <div class="menu-content">
-        <div class="name-section">
-            <label>👤 Nome do Herói / Aluno</label>
-            <input class="input-field" id="studentName" placeholder="Digite seu nome, herói..." maxlength="40" style="text-align:center;font-weight:700;font-size:1.1rem;margin-top:4px">
-        </div>
-        <div style="text-align:center;color:#94a3b8;font-size:0.8rem;margin-bottom:4px">Escolha seu personagem:</div>
-        <div class="char-grid" id="charGrid"></div>
-        <div class="menu-actions">
-            <button class="btn btn-primary" onclick="startGame()" style="font-size:1.1rem;padding:16px 40px">▶ Iniciar Jornada</button>
-            <button class="btn btn-outline btn-sm" onclick="showScreen('dashboard')">📊 Painéis</button>
-        </div>
-        <div class="menu-footer">🎯 Discalculia · Ensino Fundamental I · Todos os números 0-9</div>
-    </div>
-</div>
-
-<!-- ======================== GAME ======================== -->
-<div id="screen-game" class="screen">
-    <div class="game-wrap">
-        <div class="level-badge" id="levelBadge"><span class="lvl lvl-1">🌱 Nível 1 — A Floresta dos Números</span></div>
-        <div class="story-bar"><div class="story-text" id="storyText">📖 O Dragão Vermelho roubou os números da vila! Derrote-o para recuperá-los!</div></div>
-        <div class="game-hud">
-            <div class="hud-item"><span class="hud-label">⭐</span><span class="hud-val gold" id="hudScore">0</span></div>
-            <div class="hud-item"><span class="hud-label">🎯</span><span class="hud-val" id="hudQ">0/15</span></div>
-            <div class="hud-progress"><div class="hud-progress-fill" id="hudProgress" style="width:0%"></div></div>
-            <div class="hud-item"><span class="hud-label">🏆</span><span class="hud-val" id="hudPrize">🌱</span></div>
-            <div class="hud-item"><span class="hud-label">👤</span><span class="hud-val" id="hudName" style="font-size:0.7rem">Herói</span></div>
-            <button class="hud-voice-btn" id="voiceToggleBtn" onclick="toggleVoice()">🔊 Voz</button>
-        </div>
-        <div class="game-char-area">
-            <div id="gameCharDisplay"></div>
-            <div class="speech-box">
-                <div class="speaker" id="speechSpeaker">Guerreiro</div>
-                <div class="text" id="speechText">Vamos recuperar os números roubados!</div>
-            </div>
-        </div>
-        <div class="quantity-area" id="quantityArea">
-            <div class="q-title" id="qTitle">Quantos 🐶 cachorros você vê?</div>
-            <div class="object-grid" id="objectGrid"></div>
-        </div>
-        <div class="ans-grid" id="ansGrid"></div>
-        <div class="game-footer">
-            <button class="btn btn-outline btn-sm" onclick="showScreen('menu')">🏠 Menu</button>
-            <button class="btn btn-outline btn-sm" onclick="resetPhase()">🔄 Reiniciar</button>
-        </div>
-    </div>
-</div>
-
-<!-- ======================== BATTLE ======================== -->
-<div id="screen-battle" class="screen">
-    <div class="battle-wrap">
-        <div class="level-badge" id="battleLevelBadge" style="margin-bottom:8px"><span class="lvl lvl-1">⚔️ BATALHA!</span></div>
-        <div class="battle-stage" id="battleStage">
-            <div class="battle-ground"></div>
-            <div class="battle-hero" id="battleHero">⚔️</div>
-            <div class="battle-boss" id="battleBoss">🐉</div>
-        </div>
-        <div class="battle-dialog" id="battleDialog">
-            <div class="bd-title" id="battleTitle">⚔️ O Dragão Vermelho apareceu!</div>
-            <div class="bd-text" id="battleText">Prepare-se para a batalha final deste nível!</div>
-        </div>
-        <button class="btn btn-gold battle-btn" id="battleBtn" onclick="startBattle()">⚔️ ATACAR!</button>
-    </div>
-</div>
-
-<!-- ======================== PRIZE ======================== -->
-<div id="screen-prize" class="screen">
-    <div class="prize-container">
-        <div class="prize-trophy" id="prizeTrophy">🏆</div>
-        <div class="prize-title" id="prizeTitle">Nível Completo!</div>
-        <div class="prize-sub" id="prizeSub">🌱 A Floresta dos Números</div>
-        <div class="prize-stats">
-            <div class="prize-stat"><div class="val" id="pCorrect">0</div><div class="lbl">Acertos</div></div>
-            <div class="prize-stat"><div class="val" id="pWrong">0</div><div class="lbl">Erros</div></div>
-            <div class="prize-stat"><div class="val" id="pAcc">0%</div><div class="lbl">Aproveitamento</div></div>
-        </div>
-        <div class="prize-actions">
-            <button class="btn btn-gold" id="prizeNextBtn" onclick="nextLevel()">▶ Próximo Nível</button>
-            <button class="btn btn-secondary btn-sm" onclick="showScreen('dashboard')">📊 Painéis</button>
-            <button class="btn btn-outline btn-sm" onclick="showScreen('menu')">🏠 Menu</button>
-        </div>
-    </div>
-</div>
-
-<!-- ======================== DASHBOARD ======================== -->
-<div id="screen-dashboard" class="screen">
-    <div class="header">
-        <h1>📊 Painéis de Acompanhamento</h1>
-        <p id="dashStudentName">Herói: —</p>
-    </div>
-    <div class="dash-wrap">
-        <div class="dash-tabs">
-            <button class="dash-tab active" data-tab="teacher" onclick="switchDash('teacher')">👨‍🏫 Professor</button>
-            <button class="dash-tab" data-tab="parent" onclick="switchDash('parent')">👪 Pais</button>
-        </div>
-        <div class="dash-panel active" id="panel-teacher">
-            <div class="stats-grid" id="teacherStats"></div>
-            <div class="canvas-box"><h3>📊 Desempenho por Número (0–9)</h3><canvas id="teacherChart" height="170"></canvas></div>
-            <div class="dash-actions">
-                <button class="btn btn-secondary btn-sm" onclick="showScreen('menu')">🏠 Voltar</button>
-            </div>
-        </div>
-        <div class="dash-panel" id="panel-parent">
-            <div style="text-align:center;margin-bottom:10px">
-                <h2 style="font-family:'Fredoka One',cursive;font-size:1.3rem;color:var(--gold)">👪 Relatório para os Pais</h2>
-            </div>
-            <div class="dash-actions">
-                <button class="btn btn-outline btn-sm" onclick="showScreen('menu')">🏠 Voltar</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-// Exemplo de script de inicialização do jogo
-const CHARACTERS = [
-    {id:'warrior',name:'Guerreiro',sub:'Coragem e força',class:'warrior',mouth:'happy'},
-    {id:'fairy',name:'Fada',sub:'Magia e luz',class:'fairy',mouth:'happy'},
-    {id:'mage',name:'Mago',sub:'Sabedoria antiga',class:'mage',mouth:'happy'},
-    {id:'orc',name:'Orc Amigo',sub:'Determinação',class:'orc',mouth:'happy'}
-];
-
-let selectedChar = 0;
-
-function renderChars(){
-    const grid = document.getElementById('charGrid');
-    grid.innerHTML = CHARACTERS.map((c, i) => `
-        <div class="char-card ${i === selectedChar ? 'selected' : ''}" onclick="selectChar(${i})">
-            <div class="check-badge">✓</div>
-            <div class="css-char ${c.class}">
-                <div class="ch-head"><div class="ch-eye-l"></div><div class="ch-eye-r"></div><div class="ch-mouth ${c.mouth}"></div></div>
-                <div class="ch-body"></div>
-                <div class="ch-leg-l"></div><div class="ch-leg-r"></div>
-            </div>
-            <div class="char-name">${c.name}</div>
-            <div class="char-sub">${c.sub}</div>
-        </div>
-    `).join('');
-}
-
-function selectChar(i){
-    selectedChar = i;
-    renderChars();
-}
-
-function showScreen(screenId){
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById('screen-' + screenId).classList.add('active');
-}
-
-function startGame(){
-    const name = document.getElementById('studentName').value.trim() || 'Herói';
-    document.getElementById('hudName').innerText = name;
-    showScreen('game');
-}
-
-function toggleVoice(){
-    const btn = document.getElementById('voiceToggleBtn');
-    btn.classList.toggle('off');
-}
-
-function switchDash(tab){
-    document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.dash-panel').forEach(p => p.classList.remove('active'));
-    document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
-    document.getElementById('panel-' + tab).classList.add('active');
-}
-
-renderChars();
-</script>
-</body>
-</html>

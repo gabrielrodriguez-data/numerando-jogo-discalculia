@@ -252,7 +252,7 @@
             const soundEnabled = document.getElementById('sound-toggle').checked;
             if(!soundEnabled) return;
             if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel(); // Para fala anterior
+                window.speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = 'pt-BR';
                 window.speechSynthesis.speak(utterance);
@@ -263,7 +263,7 @@
             document.querySelectorAll('.hero-option').forEach(el => el.classList.remove('selected'));
             element.classList.add('selected');
             selectedCard = heroName;
-            speakText(heroName selecionado);
+            speakText(heroName + ' selecionado');
         }
 
         function startGame() {
@@ -284,7 +284,7 @@
             document.getElementById('game-title').innerText = titleMsg;
             document.getElementById('game-text').innerText = bodyMsg;
 
-            speakText(`${titleMsg}. ${bodyMsg}`);
+            speakText(titleMsg + '. ' + bodyMsg);
         }
     </script>
 </body>

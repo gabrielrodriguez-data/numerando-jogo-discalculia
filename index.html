@@ -1,399 +1,291 @@
-package br.com.senac.pressao;
-
-import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
-import java.io.IOException;
-import java.util.List;
-import javax.swing.AbstractAction;
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComponent;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JScrollPane;
-import javax.swing.JRootPane;
-import javax.swing.JTable;
-import javax.swing.JTextField;
-import javax.swing.KeyStroke;
-import javax.swing.ListSelectionModel;
-import javax.swing.JPanel;
-import javax.swing.table.DefaultTableModel;
-
-public class TelaMedicoes extends JFrame {
-    private static final Font FONTE_GRANDE = new Font("SansSerif", Font.PLAIN, 18);
-    private static final Font FONTE_TITULO = new Font("SansSerif", Font.BOLD, 24);
-    private static final Font FONTE_CABECALHO = new Font("SansSerif", Font.BOLD, 16);
-
-    private final ArquivoMedicoes arquivo = new ArquivoMedicoes();
-
-    private final JTextField txtData = new JTextField(14);
-    private final JTextField txtHora = new JTextField(10);
-    private final JTextField txtSistolica = new JTextField(10);
-    private final JTextField txtDiastolica = new JTextField(10);
-    private final JCheckBox chkEstresse = new JCheckBox("Estou em situação de estresse");
-    private final JButton btnSalvar = new JButton("Salvar");
-    private final JButton btnLimpar = new JButton("Limpar");
-    private final JButton btnFechar = new JButton("Fechar");
-
-    private final DefaultTableModel modelo = new DefaultTableModel(
-            new Object[] {"Data", "Hora", "Pressão Sistólica", "Pressão Diastólica", "Estresse"}, 0) {
-        @Override
-        public boolean isCellEditable(int row, int column) {
-            return false;
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Numerando - A Lenda dos Números Perdidos</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
+        :root{
+            --bg:#0a0a1a;
+            --card:#151528;
+            --card2:#1a1a3e;
+            --accent:#e94560;
+            --gold:#ffd700;
+            --green:#4ade80;
+            --blue:#3b82f6;
+            --purple:#a855f7;
+            --pink:#ec4899;
+            --font-scale: 1rem;
         }
-    };
-
-    private final JTable tabela = new JTable(modelo);
-
-    // Rótulos atualizados com a unidade de medida (mmHg)
-    private final JLabel[] labelsDaTela = new JLabel[] {
-        new JLabel("Data:"),
-        new JLabel("Hora:"),
-        new JLabel("Pressão sistólica (mmHg):"),
-        new JLabel("Pressão diastólica (mmHg):")
-    };
-
-    public TelaMedicoes() {
-        setTitle("Registro de Medições de Pressão");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(900, 650);
-        setMinimumSize(new Dimension(780, 580));
-        setLocationRelativeTo(null);
-
-        construirInterface();
-        configurarAcessibilidade();
-        configurarAtalhos();
-        carregarArquivo();
-        preencherDataHoraAtual();
-    }
-
-    private void construirInterface() {
-        JPanel principal = new JPanel(new BorderLayout(15, 15));
-        principal.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
-        JLabel titulo = new JLabel("Registro de Medições de Pressão");
-        titulo.setFont(FONTE_TITULO);
-        titulo.setToolTipText("Tela para registrar e consultar medições de pressão arterial.");
-        principal.add(titulo, BorderLayout.NORTH);
-
-        JPanel formulario = new JPanel(new GridBagLayout());
-        formulario.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createEtchedBorder(),
-                "Nova medição"
-        ));
-
-        JLabel lblData = labelsDaTela[0];
-        JLabel lblHora = labelsDaTela[1];
-        JLabel lblSistolica = labelsDaTela[2];
-        JLabel lblDiastolica = labelsDaTela[3];
-
-        lblData.setLabelFor(txtData);
-        lblHora.setLabelFor(txtHora);
-        lblSistolica.setLabelFor(txtSistolica);
-        lblDiastolica.setLabelFor(txtDiastolica);
-
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(8, 10, 8, 10);
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-
-        adicionarCampo(formulario, gbc, 0, lblData, txtData);
-        adicionarCampo(formulario, gbc, 1, lblHora, txtHora);
-        adicionarCampo(formulario, gbc, 2, lblSistolica, txtSistolica);
-        adicionarCampo(formulario, gbc, 3, lblDiastolica, txtDiastolica);
-
-        gbc.gridx = 1;
-        gbc.gridy = 4;
-        gbc.gridwidth = 2;
-        formulario.add(chkEstresse, gbc);
-
-        JPanel botoes = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
-        botoes.add(btnSalvar);
-        botoes.add(btnLimpar);
-        botoes.add(btnFechar);
-
-        gbc.gridy = 5;
-        formulario.add(botoes, gbc);
-
-        JPanel topo = new JPanel(new BorderLayout());
-        topo.add(formulario, BorderLayout.CENTER);
-        principal.add(topo, BorderLayout.CENTER);
-
-        tabela.setFont(FONTE_GRANDE);
-        tabela.setRowHeight(34);
-        tabela.getTableHeader().setFont(FONTE_CABECALHO);
-        tabela.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        tabela.setFillsViewportHeight(true);
-
-        JScrollPane scroll = new JScrollPane(tabela);
-        scroll.setBorder(BorderFactory.createTitledBorder("Histórico de medições"));
-        principal.add(scroll, BorderLayout.SOUTH);
-
-        scroll.setPreferredSize(new Dimension(850, 280));
-
-        btnSalvar.addActionListener(e -> salvar());
-        btnLimpar.addActionListener(e -> limpar());
-        btnFechar.addActionListener(e -> dispose());
-
-        getRootPane().setDefaultButton(btnSalvar);
-        add(principal);
-    }
-
-    private void adicionarCampo(JPanel painel, GridBagConstraints gbc, int linha,
-                                JLabel label, JTextField campo) {
-        gbc.gridx = 0;
-        gbc.gridy = linha;
-        gbc.gridwidth = 1;
-        gbc.weightx = 0;
-        painel.add(label, gbc);
-
-        gbc.gridx = 1;
-        gbc.weightx = 1;
-        campo.setPreferredSize(new Dimension(260, 38));
-        painel.add(campo, gbc);
-    }
-
-    private void configurarAcessibilidade() {
-        for (JLabel label : labelsDaTela) {
-            label.setFont(FONTE_GRANDE);
+        body{
+            font-family:'Nunito',sans-serif;
+            background:var(--bg);
+            color:#fff;
+            min-height:100vh;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            justify-content:center;
+            overflow-x:hidden;
+            font-size: var(--font-scale);
         }
-
-        txtData.setFont(FONTE_GRANDE);
-        txtHora.setFont(FONTE_GRANDE);
-        txtSistolica.setFont(FONTE_GRANDE);
-        txtDiastolica.setFont(FONTE_GRANDE);
-        chkEstresse.setFont(FONTE_GRANDE);
-
-        // Destaque visual no botão Salvar (Ação Principal)
-        btnSalvar.setFont(new Font("SansSerif", Font.BOLD, 20));
-        btnSalvar.setBackground(new java.awt.Color(220, 245, 220)); 
-        btnSalvar.setForeground(new java.awt.Color(0, 100, 0));       
+        h1,h2,h3,.font-game{font-family:'Fredoka One',cursive;}
         
-        btnLimpar.setFont(FONTE_GRANDE);
-        btnFechar.setFont(FONTE_GRANDE);
+        /* Controles de Acessibilidade de Texto */
+        .accessibility-bar {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+            z-index: 1000;
+            background: rgba(21, 21, 40, 0.9);
+            padding: 5px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .accessibility-bar button {
+            background: var(--card2);
+            color: #fff;
+            border: 1px solid var(--accent);
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
 
-        txtData.setToolTipText("Digite a data da medição no formato dd/MM/aaaa.");
-        txtHora.setToolTipText("Digite o horário no formato HH:mm.");
-        txtSistolica.setToolTipText("Digite somente números inteiros para a pressão sistólica em mmHg.");
-        txtDiastolica.setToolTipText("Digite somente números inteiros para a pressão diastólica em mmHg.");
-        chkEstresse.setToolTipText("Marque se você estava em uma situação de estresse no momento da medição.");
-        btnSalvar.setToolTipText("Salva a medição no arquivo CSV. Atalho: Alt+S.");
-        btnLimpar.setToolTipText("Limpa os campos da nova medição. Atalho: Alt+L.");
-        btnFechar.setToolTipText("Fecha o sistema. Atalho: Alt+F.");
+        .container{
+            width:100%;
+            max-width:800px;
+            padding:20px;
+            text-align:center;
+        }
+        
+        header{
+            margin-bottom:20px;
+        }
+        header h1{
+            font-size: calc(var(--font-scale) * 2.2);
+            color:var(--gold);
+            text-shadow: 0 2px 10px rgba(255,215,0,0.3);
+        }
+        header p{
+            color:#a0aec0;
+            font-size: calc(var(--font-scale) * 0.95);
+            margin-top:5px;
+        }
 
-        btnSalvar.setMnemonic(KeyEvent.VK_S);
-        btnLimpar.setMnemonic(KeyEvent.VK_L);
-        btnFechar.setMnemonic(KeyEvent.VK_F);
+        .card{
+            background:var(--card);
+            border:2px solid rgba(255,255,255,0.05);
+            border-radius:16px;
+            padding:24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom:20px;
+        }
 
-        chkEstresse.setMnemonic(KeyEvent.VK_E);
-    }
+        .btn{
+            background:linear-gradient(135deg, var(--accent), #ff6b6b);
+            color:#fff;
+            border:none;
+            padding:12px 24px;
+            font-size: calc(var(--font-scale) * 1.1);
+            font-family:'Fredoka One',cursive;
+            border-radius:12px;
+            cursor:pointer;
+            transition:transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(233,69,96,0.4);
+        }
+        .btn:hover{
+            transform:translateY(-2px);
+            box-shadow: 0 6px 20px rgba(233,69,96,0.6);
+        }
+        .btn-secondary{
+            background:var(--card2);
+            border:2px solid var(--accent);
+            box-shadow:none;
+        }
 
-    private void configurarAtalhos() {
-        JRootPane raiz = getRootPane();
+        .settings-grid{
+            display:grid;
+            grid-template-columns: 1fr 1fr;
+            gap:15px;
+            margin-top:15px;
+            text-align:left;
+        }
+        .setting-box{
+            background:var(--card2);
+            padding:15px;
+            border-radius:12px;
+        }
+        .setting-box h3{font-size: calc(var(--font-scale) * 1rem);margin-bottom:8px;color:var(--gold);}
 
-        raiz.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
-                .put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "fechar");
+        input[type="text"]{
+            width:100%;
+            padding:12px;
+            background:var(--card2);
+            border:2px solid rgba(255,255,255,0.1);
+            border-radius:10px;
+            color:#fff;
+            font-size: calc(var(--font-scale) * 1rem);
+            text-align:center;
+            margin-bottom:15px;
+        }
+        input[type="text"]:focus{
+            border-color:var(--accent);
+            outline:none;
+        }
 
-        raiz.getActionMap().put("fechar", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                dispose();
+        .heroes-grid{
+            display:grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap:10px;
+            margin-bottom:20px;
+        }
+        .hero-option{
+            background:var(--card2);
+            border:2px solid transparent;
+            border-radius:12px;
+            padding:15px;
+            cursor:pointer;
+            transition:all 0.2s;
+        }
+        .hero-option.selected{
+            border-color:var(--gold);
+            background:rgba(255,215,0,0.1);
+        }
+        .hero-option h4{color:var(--gold);margin-top:5px;}
+        .hero-option p{font-size: calc(var(--font-scale) * 0.8);color:#a0aec0;}
+
+        .hidden{display:none !important;}
+    </style>
+</head>
+<body>
+
+    <!-- Barra de acessibilidade para aumentar/diminuir fonte -->
+    <div class="accessibility-bar">
+        <span style="font-size:0.8rem;align-self:center;margin-right:5px;">Texto:</span>
+        <button onclick="changeFontSize(-1)" title="Diminuir Letra">A-</button>
+        <button onclick="changeFontSize(1)" title="Aumentar Letra">A+</button>
+    </div>
+
+    <div class="container" id="menu-screen">
+        <header>
+            <h1>⚔️ Numerando: A Lenda dos Números Perdidos</h1>
+            <p>Um RPG de aventura matemática para aprender os números!</p>
+        </header>
+
+        <div class="card">
+            <input type="text" id="hero-name" placeholder="Digite seu nome, herói..." maxlength="20">
+            
+            <h3 style="margin-bottom:10px;font-size:1rem;">Escolha seu personagem:</h3>
+            <div class="heroes-grid">
+                <div class="hero-option selected" onclick="selectHero('Guerreiro', this)">
+                    <div style="font-size:2rem;">🛡️</div>
+                    <h4>Guerreiro</h4>
+                    <p>Coragem e força</p>
+                </div>
+                <div class="hero-option" onclick="selectHero('Fada', this)">
+                    <div style="font-size:2rem;">✨</div>
+                    <h4>Fada</h4>
+                    <p>Magia e luz</p>
+                </div>
+                <div class="hero-option" onclick="selectHero('Mago', this)">
+                    <div style="font-size:2rem;">🧙‍♂️</div>
+                    <h4>Mago</h4>
+                    <p>Sabedoria antiga</p>
+                </div>
+                <div class="hero-option" onclick="selectHero('Orc Amigo', this)">
+                    <div style="font-size:2rem;">🟢</div>
+                    <h4>Orc Amigo</h4>
+                    <p>Determinação</p>
+                </div>
+            </div>
+
+            <!-- Configurações de Item e Áudio -->
+            <div class="settings-grid">
+                <div class="setting-box">
+                    <h3>🎒 Item Inicial</h3>
+                    <select id="starting-item" style="width:100%;padding:8px;background:var(--bg);color:#fff;border-radius:8px;border:1px solid #444;font-size:inherit;">
+                        <option value="Poção de Cura">Poção de Cura (+1 Vida)</option>
+                        <option value="Amuleto da Sorte">Amuleto da Sorte</option>
+                        <option value="Pergaminho Mágico">Pergaminho Mágico</option>
+                    </select>
+                </div>
+                <div class="setting-box">
+                    <h3>🎵 Som e Voz</h3>
+                    <label style="display:flex;align-items:center;cursor:pointer;margin-top:5px;font-size:0.9rem;">
+                        <input type="checkbox" id="sound-toggle" checked style="margin-right:8px;transform:scale(1.2);"> Ativar Voz e Áudio
+                    </label>
+                </div>
+            </div>
+
+            <br>
+            <button class="btn" onclick="startGame()">▶ Iniciar Jornada</button>
+        </div>
+    </div>
+
+    <div class="container hidden" id="game-screen">
+        <div class="card">
+            <h2 id="game-title">Aventura Iniciada!</h2>
+            <p id="game-text" style="margin:20px 0;">Boa sorte na sua jornada matemática!</p>
+            <button class="btn btn-secondary" onclick="speakText(document.getElementById('game-text').innerText)">🔊 Ouvir Texto</button>
+            <br><br>
+            <button class="btn btn-secondary" onclick="location.reload()">Reiniciar Jogo</button>
+        </div>
+    </div>
+
+    <script>
+        let selectedCard = 'Guerreiro';
+        let currentSize = 16; // tamanho base em pixels
+
+        function changeFontSize(direction) {
+            currentSize += direction * 2;
+            if(currentSize < 12) currentSize = 12;
+            if(currentSize > 26) currentSize = 26;
+            document.documentElement.style.setProperty('--font-scale', currentSize + 'px');
+        }
+
+        function speakText(text) {
+            const soundEnabled = document.getElementById('sound-toggle').checked;
+            if(!soundEnabled) return;
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Para fala anterior
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'pt-BR';
+                window.speechSynthesis.speak(utterance);
             }
-        });
+        }
 
-        raiz.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
-                .put(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK), "salvarCtrl");
+        function selectHero(heroName, element) {
+            document.querySelectorAll('.hero-option').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+            selectedCard = heroName;
+            speakText(heroName selecionado);
+        }
 
-        raiz.getActionMap().put("salvarCtrl", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                salvar();
+        function startGame() {
+            const name = document.getElementById('hero-name').value.trim();
+            const item = document.getElementById('starting-item').value;
+
+            if(!name) {
+                alert('Por favor, digite o nome do herói!');
+                return;
             }
-        });
 
-        setFocusTraversalPolicy(new OrdemFocoPolicy(
-                txtData, txtHora, txtSistolica, txtDiastolica,
-                chkEstresse, btnSalvar, btnLimpar, btnFechar
-        ));
-        setFocusTraversalPolicyProvider(true);
-    }
+            document.getElementById('menu-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            
+            const titleMsg = `Herói: ${name} (${selectedCard})`;
+            const bodyMsg = `Item escolhido: ${item}. Prepare-se para os desafios matemáticos e boa aventura!`;
 
-    private void preencherDataHoraAtual() {
-        java.time.LocalDate hoje = java.time.LocalDate.now();
-        java.time.LocalTime agora = java.time.LocalTime.now();
+            document.getElementById('game-title').innerText = titleMsg;
+            document.getElementById('game-text').innerText = bodyMsg;
 
-        txtData.setText(hoje.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-        txtHora.setText(agora.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")));
-    }
-
-    private void carregarArquivo() {
-        try {
-            List<Medicao> medicoes = arquivo.carregar();
-            modelo.setRowCount(0);
-
-            for (Medicao medicao : medicoes) {
-                adicionarNaTabela(medicao);
-            }
-        } catch (IOException ex) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Não foi possível ler o arquivo de medições.\n" +
-                    "O programa continuará funcionando e poderá criar um novo arquivo.\n\n" +
-                    "Detalhes: " + ex.getMessage(),
-                    "Aviso",
-                    JOptionPane.WARNING_MESSAGE
-            );
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Ocorreu um problema ao carregar o histórico.\n" +
-                    "Você ainda pode realizar novas medições.",
-                    "Aviso",
-                    JOptionPane.WARNING_MESSAGE
-            );
+            speakText(`${titleMsg}. ${bodyMsg}`);
         }
-    }
-
-    private void salvar() {
-        try {
-            String data = Validador.validarData(txtData.getText());
-            String hora = Validador.validarHora(txtHora.getText());
-            int sistolica = Validador.validarPressao(
-                    txtSistolica.getText(), "sistólica"
-            );
-            int diastolica = Validador.validarPressao(
-                    txtDiastolica.getText(), "diastólica"
-            );
-
-            Medicao medicao = new Medicao(
-                    data,
-                    hora,
-                    sistolica,
-                    diastolica,
-                    chkEstresse.isSelected()
-            );
-
-            arquivo.adicionar(medicao);
-            adicionarNaTabela(medicao);
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Medição salva com sucesso!\n" +
-                    "O registro foi gravado no arquivo medicoes.csv.",
-                    "Sucesso",
-                    JOptionPane.INFORMATION_MESSAGE
-            );
-
-            limparCamposMantendoDataHora();
-
-        } catch (ValidacaoException ex) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    ex.getMessage(),
-                    "Dados inválidos",
-                    JOptionPane.WARNING_MESSAGE
-            );
-        } catch (IOException ex) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Não foi possível salvar a medição no arquivo.\n\n" +
-                    "Verifique se a pasta permite gravação.\n" +
-                    "Detalhes: " + ex.getMessage(),
-                    "Erro ao salvar",
-                    JOptionPane.ERROR_MESSAGE
-            );
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Ocorreu um erro inesperado ao salvar a medição.\n" +
-                    "Nenhuma ação adicional foi realizada.",
-                    "Erro",
-                    JOptionPane.ERROR_MESSAGE
-            );
-        }
-    }
-
-    private void adicionarNaTabela(Medicao medicao) {
-        modelo.addRow(new Object[] {
-                medicao.getData(),
-                medicao.getHora(),
-                medicao.getSistolica(),
-                medicao.getDiastolica(),
-                medicao.isEstresse() ? "Sim" : "Não"
-        });
-
-        if (modelo.getRowCount() > 0) {
-            tabela.scrollRectToVisible(
-                    tabela.getCellRect(modelo.getRowCount() - 1, 0, true)
-            );
-        }
-    }
-
-    private void limpar() {
-        txtData.setText("");
-        txtHora.setText("");
-        txtSistolica.setText("");
-        txtDiastolica.setText("");
-        chkEstresse.setSelected(false);
-        txtData.requestFocusInWindow();
-    }
-
-    private void limparCamposMantendoDataHora() {
-        txtSistolica.setText("");
-        txtDiastolica.setText("");
-        chkEstresse.setSelected(false);
-        txtSistolica.requestFocusInWindow();
-    }
-
-    private static class OrdemFocoPolicy extends java.awt.FocusTraversalPolicy {
-        private final List<Component> componentes;
-
-        OrdemFocoPolicy(Component... componentes) {
-            this.componentes = List.of(componentes);
-        }
-
-        @Override
-        public Component getComponentAfter(Container aContainer, Component aComponent) {
-            int indice = componentes.indexOf(aComponent);
-            if (indice < 0) {
-                return componentes.get(0);
-            }
-            return componentes.get((indice + 1) % componentes.size());
-        }
-
-        @Override
-        public Component getComponentBefore(Container aContainer, Component aComponent) {
-            int indice = componentes.indexOf(aComponent);
-            if (indice < 0) {
-                return componentes.get(0);
-            }
-            return componentes.get((indice - 1 + componentes.size()) % componentes.size());
-        }
-
-        @Override
-        public Component getFirstComponent(Container aContainer) {
-            return componentes.get(0);
-        }
-
-        @Override
-        public Component getLastComponent(Container aContainer) {
-            return componentes.get(componentes.size() - 1);
-        }
-
-        @Override
-        public Component getDefaultComponent(Container aContainer) {
-            return componentes.get(0);
-        }
-    }
-}
+    </script>
+</body>
+</html>
